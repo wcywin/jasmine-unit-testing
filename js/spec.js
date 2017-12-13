@@ -156,26 +156,138 @@ describe("Pending specs", function () {
 
 });
 
-//==================================== One or more expect function
+// ==================================== SPIES ====================================
 
-// Not great
-describe("Earth", function () {
-    it("is round and has a method to check what number it is from the sun", function () {
-        expect(earth.isRound()).toBe(true);
-        expect(earth.howFarFromSun).toBe(jasmine.any(Function));
-        expect(earth.howFarFromSun()).toBe(3);
+// ==================================== Creating a spy
+function add(a,b,c){
+    return a+b+c;
+}
+
+describe("Function add", function () {
+    var addSpy, result;
+    beforeEach(function () {
+        addSpy = spyOn(window, "add");
+        result = addSpy();
+    });
+
+    it("can have params tested", function () {
+        expect(addSpy).toHaveBeenCalled(); // new matcher
     });
 });
 
-// Better
-describe("Earth", function () {
-    it("is round", function () {
-        expect(earth.isRound()).toBe(true);
+// ==================================== Testing parameters
+
+describe("Function add", function () {
+    var addSpy, result;
+    beforeEach(function () {
+        addSpy = spyOn(window, "add");
+        result = addSpy(1,2,3);
     });
-    it("has a method to check what number it is from the sun", function () {
-        expect(earth.howFarFromSun).toBe(jasmine.any(Function));
-        expect(earth.howFarFromSun()).toBe(3);
+
+    it("can have params tested", function () {
+        expect(addSpy).toHaveBeenCalled();
+        expect(addSpy).toHaveBeenCalledWith(1,2,3); // new matcher - parameters
     });
 });
+
+// ==================================== Testing the return value
+
+describe("Function add", function () {
+    var addSpy, result;
+    beforeEach(function () {
+        addSpy = spyOn(window, "add").and.callThrough(); //checking with dummy numbers
+        result = addSpy(1,2,3);
+    });
+
+    it("can have a return value tested", function () {
+        expect(result).toEqual(6);
+    });
+});
+
+// ===================================== Testing frequency
+
+describe("Function add", function () {
+    var addSpy, result;
+    beforeEach(function () {
+        addSpy = spyOn(window, "add").and.callThrough();
+        result = addSpy(1,2,3);
+    });
+
+    it("can have params tested", function () {
+        expect(addSpy.calls.any()).toBe(true);
+        expect(addSpy.calls.count()).toBe(1); // test runs just once
+        expect(result).toEqual(6);
+    });
+});
+
+// ==================================== CLOCK ====================================
+
+// Installing and uninstalling the clock after each unit tested
+
+describe("A simple setTimeout", function () {
+    var sample;
+    beforeEach(function () {
+        sample = jasmine.createSpy("sampleFunction");
+        jasmine.clock().install();
+    });
+
+    afterEach(function () {
+        jasmine.clock().uninstall();
+    });
+
+    it("is only invoked after 1000 milliseconds", function () {
+        setTimeout(function () {
+            sample();
+        }, 1000);
+        jasmine.clock().tick(999); // moves the clock ahead by 999 ms
+        expect(sample).not.toHaveBeenCalled();
+        jasmine.clock().tick(1);
+        expect(sample).toHaveBeenCalled();
+    });
+
+});
+
+describe("A simple setInterval", function () {
+    var dummyFunction;
+
+    beforeEach(function () {
+        dummyFunction = jasmine.createSpy("dummyFunction");
+        jasmine.clock().install();
+    });
+
+    afterEach(function () {
+        jasmine.clock().uninstall();
+    });
+
+    it("checks to see the number of times the function is invoked", function () {
+        setInterval(function () {
+            dummyFunction();
+        }, 1000);
+        jasmine.clock().tick(999);
+        expect(dummyFunction.calls.count()).toBe(0);
+        jasmine.clock().tick(1000);
+        expect(dummyFunction.calls.count()).toBe(1);
+        jasmine.clock().tick(1);
+        expect(dummyFunction.calls.count()).toBe(2);
+    });
+
+});
+
+
+// =========================================== Async Tests
+
+function getUserInfo(username) {
+    return $.getJSON("https://api.github.com/users/" + username);
+}
+
+describe("#getUserInfo", function () {
+    it("returns the correct name for the user", function (done) {
+        getUserInfo("wcywin").then(function (data) {
+            expect(data.name).toBe("Wojciech Cywinski");
+            done();
+        });
+    });
+});
+
 
 
